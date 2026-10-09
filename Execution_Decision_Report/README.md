@@ -7,7 +7,7 @@ Synthesize Tasks 02–05 into an executive-ready Business Intelligence report fo
 
 ## 🚀 Live Interactive Dashboard
 You can access and explore the live Streamlit dashboard here:  
-👉 **[Retail Business Intelligence & Analytics Dashboard](https://retailanalyticsapp-z294pv9u3tzjse8cihqgrw.streamlit.app/)**
+👉 **[Retail Analytics Hub Dashboard](https://retailanalyticsapp-z294pv9u3tzjse8cihqgrw.streamlit.app/)**
 
 ---
 
