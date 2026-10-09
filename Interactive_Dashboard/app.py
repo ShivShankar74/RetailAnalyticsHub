@@ -2,55 +2,58 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
-import streamlit.components.v1 as components
 from pathlib import Path
 
 # ============================================================
 # PAGE CONFIG
 # ============================================================
 
+APP_NAME = "Retail Analytics Hub"
+
 st.set_page_config(
-    page_title="Retail Business Dashboard",
-    page_icon="📊",
+    page_title=APP_NAME,
+    page_icon="🛍️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================================
-# DESIGN TOKENS
+# DESIGN TOKENS  —  "Aurora Glass" theme
 # ============================================================
 
-BG = "#0A0E16"
-PANEL = "#121826"
-PANEL_BORDER = "#232B3D"
-TEXT = "#E7EBF2"
-TEXT_DIM = "#8892A6"
-ACCENT = "#F5A623"      # amber — primary signal
-ACCENT_2 = "#2FD3C6"    # teal — secondary signal
-DANGER = "#FF6B6B"
+BG = "#080B1A"
+PANEL = "#111633"
+PANEL_ALT = "#171D42"
+PANEL_BORDER = "rgba(139,92,246,0.28)"
+GRID = "rgba(148,163,255,0.12)"
+TEXT = "#F1F3FF"
+TEXT_DIM = "#9AA3C7"
 
-COLORWAY = [
-    "#F5A623", "#2FD3C6", "#5B8DEF", "#FF6B6B",
-    "#B98CF7", "#7ED957", "#FFD166", "#4EA8DE"
-]
+VIOLET = "#8B5CF6"
+CYAN = "#22D3EE"
+PINK = "#F472B6"
+AMBER = "#FBBF24"
+GREEN = "#34D399"
+
+COLORWAY = [VIOLET, CYAN, PINK, AMBER, GREEN, "#60A5FA", "#FB7185", "#A78BFA"]
 
 # ============================================================
-# PLOTLY DARK TEMPLATE (applies to every px chart below)
+# PLOTLY TEMPLATE
 # ============================================================
 
-pio.templates["control_room"] = pio.templates["plotly_dark"]
-pio.templates["control_room"].layout.update(
-    paper_bgcolor=PANEL,
-    plot_bgcolor=PANEL,
-    font=dict(family="Inter, sans-serif", color=TEXT, size=13),
-    title=dict(font=dict(family="Space Grotesk, sans-serif", size=16, color=TEXT)),
+pio.templates["aurora"] = pio.templates["plotly_dark"]
+pio.templates["aurora"].layout.update(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Poppins, sans-serif", color=TEXT, size=13),
+    title=dict(font=dict(family="Poppins, sans-serif", size=16, color=TEXT)),
     colorway=COLORWAY,
-    xaxis=dict(gridcolor=PANEL_BORDER, zerolinecolor=PANEL_BORDER, linecolor=PANEL_BORDER),
-    yaxis=dict(gridcolor=PANEL_BORDER, zerolinecolor=PANEL_BORDER, linecolor=PANEL_BORDER),
+    xaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID),
+    yaxis=dict(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID),
     legend=dict(bgcolor="rgba(0,0,0,0)"),
     margin=dict(t=60, l=10, r=10, b=10),
 )
-pio.templates.default = "control_room"
+pio.templates.default = "aurora"
 
 # ============================================================
 # CUSTOM CSS
@@ -58,89 +61,156 @@ pio.templates.default = "control_room"
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
     html, body, [class*="css"] {{
-        font-family: 'Inter', sans-serif;
+        font-family: 'Poppins', sans-serif;
     }}
 
+    /* ---- Aurora background ---- */
     .stApp {{
-        background: {BG};
+        background:
+            radial-gradient(900px 500px at 8% -5%, rgba(139,92,246,0.28), transparent 60%),
+            radial-gradient(800px 500px at 95% 5%, rgba(34,211,238,0.18), transparent 60%),
+            radial-gradient(700px 500px at 50% 110%, rgba(244,114,182,0.16), transparent 60%),
+            {BG};
+        background-attachment: fixed;
         color: {TEXT};
     }}
 
-    section[data-testid="stSidebar"] {{
-        background: {PANEL};
-        border-right: 1px solid {PANEL_BORDER};
-    }}
-
-    section[data-testid="stSidebar"] * {{
-        color: {TEXT} !important;
+    header[data-testid="stHeader"] {{
+        background: transparent;
     }}
 
     .main .block-container {{
         padding-top: 1.5rem;
-        max-width: 1300px;
+        max-width: 1320px;
     }}
 
-    /* ---- Header ---- */
-    .db-header {{
-        border-left: 3px solid {ACCENT};
-        padding-left: 16px;
-        margin-bottom: 4px;
+    /* ---- Sidebar ---- */
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, #12173A 0%, #0B0F26 100%);
+        border-right: 1px solid {PANEL_BORDER};
+    }}
+    section[data-testid="stSidebar"] * {{
+        color: {TEXT} !important;
     }}
 
-    .db-header h1 {{
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 30px;
-        color: {TEXT};
-        margin: 0;
-        line-height: 1.2;
-    }}
-
-    .db-header p {{
-        color: {TEXT_DIM};
-        font-size: 15px;
-        margin: 4px 0 0 0;
-    }}
-
-    .db-meta {{
-        font-family: 'IBM Plex Mono', monospace;
-        color: {TEXT_DIM};
-        font-size: 12.5px;
-        margin: 10px 0 24px 19px;
-        letter-spacing: 0.2px;
-    }}
-
-    /* ---- Section headers (replace st.subheader look) ---- */
-    .db-section {{
+    .sb-brand {{
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 10px;
-        margin: 34px 0 14px 0;
-        padding-bottom: 8px;
+        padding: 6px 0 14px 0;
+        margin-bottom: 10px;
         border-bottom: 1px solid {PANEL_BORDER};
     }}
-
-    .db-section .bar {{
-        width: 8px;
-        height: 8px;
-        border-radius: 2px;
-        background: {ACCENT};
-        flex-shrink: 0;
-        margin-bottom: 3px;
+    .sb-brand .logo {{
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+        background: linear-gradient(135deg, {VIOLET}, {CYAN});
+        box-shadow: 0 6px 18px rgba(139,92,246,0.45);
+    }}
+    .sb-brand .name {{
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 1.1;
+    }}
+    .sb-brand .tag {{
+        font-size: 11px;
+        color: {TEXT_DIM} !important;
     }}
 
-    .db-section h3 {{
-        font-family: 'Space Grotesk', sans-serif;
+    /* ---- Hero header ---- */
+    .hero {{
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 30px 34px;
+        margin-bottom: 14px;
+        background:
+            linear-gradient(135deg, rgba(139,92,246,0.35), rgba(34,211,238,0.18) 60%, rgba(244,114,182,0.22));
+        border: 1px solid {PANEL_BORDER};
+        box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+        animation: fadeInUp 0.6s ease-out;
+    }}
+    .hero::after {{
+        content: "";
+        position: absolute;
+        right: -60px; top: -60px;
+        width: 240px; height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%);
+        animation: floaty 7s ease-in-out infinite;
+    }}
+    .hero .eyebrow {{
+        display: inline-block;
+        font-size: 11.5px;
         font-weight: 600;
-        font-size: 19px;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: {CYAN};
+        background: rgba(34,211,238,0.12);
+        border: 1px solid rgba(34,211,238,0.35);
+        padding: 4px 12px;
+        border-radius: 999px;
+        margin-bottom: 12px;
+    }}
+    .hero h1 {{
+        font-weight: 700;
+        font-size: 38px;
+        margin: 0;
+        line-height: 1.15;
+        background: linear-gradient(90deg, #FFFFFF 10%, #C4B5FD 50%, #67E8F9 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }}
+    .hero p {{
+        color: {TEXT_DIM};
+        font-size: 15px;
+        margin: 8px 0 0 0;
+    }}
+
+    .meta-row {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 8px 2px;
+    }}
+    .chip {{
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: {TEXT_DIM};
+        background: rgba(255,255,255,0.04);
+        border: 1px solid {PANEL_BORDER};
+        padding: 5px 12px;
+        border-radius: 999px;
+    }}
+    .chip b {{ color: {TEXT}; font-weight: 700; }}
+
+    /* ---- Section headers ---- */
+    .db-section {{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 38px 0 16px 0;
+    }}
+    .db-section .pill {{
+        width: 5px;
+        height: 26px;
+        border-radius: 6px;
+        background: linear-gradient(180deg, {VIOLET}, {CYAN});
+        box-shadow: 0 0 14px rgba(139,92,246,0.7);
+    }}
+    .db-section h3 {{
+        font-weight: 600;
+        font-size: 20px;
         color: {TEXT};
         margin: 0;
     }}
-
-    .db-section span.sub {{
+    .db-section .sub {{
         color: {TEXT_DIM};
         font-size: 13px;
     }}
@@ -148,76 +218,53 @@ st.markdown(f"""
     /* ---- KPI cards ---- */
     .kpi-grid {{
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        gap: 14px;
         margin-bottom: 6px;
     }}
-
     .kpi-card {{
-        background: {PANEL};
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+        backdrop-filter: blur(10px);
         border: 1px solid {PANEL_BORDER};
-        border-top: 2px solid var(--kpi-accent, {ACCENT});
-        border-radius: 8px;
-        padding: 16px 18px;
+        border-radius: 16px;
+        padding: 18px 20px;
+        animation: fadeInUp 0.55s ease-out backwards;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }}
-
+    .kpi-card::before {{
+        content: "";
+        position: absolute;
+        left: 0; top: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--kpi-a), var(--kpi-b));
+    }}
+    .kpi-card:hover {{
+        transform: translateY(-5px);
+        border-color: var(--kpi-a);
+        box-shadow: 0 14px 34px rgba(0,0,0,0.4), 0 0 24px -6px var(--kpi-a);
+    }}
+    .kpi-card .kpi-icon {{
+        width: 34px; height: 34px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 10px;
+        font-size: 16px;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, var(--kpi-a), var(--kpi-b));
+    }}
     .kpi-card .kpi-label {{
         color: {TEXT_DIM};
         font-size: 12.5px;
         font-weight: 500;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }}
-
     .kpi-card .kpi-value {{
-        font-family: 'IBM Plex Mono', monospace;
-        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
         font-size: 24px;
         color: {TEXT};
-        letter-spacing: -0.3px;
-    }}
-
-    /* ---- Misc Streamlit element overrides ---- */
-    div[data-testid="stMetric"] {{
-        background: {PANEL};
-        border: 1px solid {PANEL_BORDER};
-        border-radius: 8px;
-        padding: 14px 16px;
-    }}
-
-    .stDataFrame {{
-        border: 1px solid {PANEL_BORDER};
-        border-radius: 8px;
-        overflow: hidden;
-    }}
-
-    .stAlert {{
-        background: {PANEL};
-        border: 1px solid {PANEL_BORDER};
-        border-radius: 8px;
-    }}
-
-    hr {{
-        border-color: {PANEL_BORDER};
-    }}
-
-    /* ---- Entrance + reveal animation ---- */
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(14px); }}
-        to   {{ opacity: 1; transform: translateY(0); }}
-    }}
-
-    @keyframes pulseGlow {{
-        0%, 100% {{ box-shadow: 0 0 0 0 rgba(245,166,35,0.45); }}
-        50%      {{ box-shadow: 0 0 7px 2px rgba(245,166,35,0.45); }}
-    }}
-
-    .kpi-card {{
-        animation: fadeInUp 0.55s ease-out backwards;
-        transition: transform 0.2s ease, border-color 0.2s ease;
-    }}
-    .kpi-card:hover {{
-        transform: translateY(-3px);
-        border-color: var(--kpi-accent, {ACCENT});
+        letter-spacing: -0.4px;
     }}
     .kpi-card:nth-child(1) {{ animation-delay: 0.02s; }}
     .kpi-card:nth-child(2) {{ animation-delay: 0.08s; }}
@@ -226,148 +273,110 @@ st.markdown(f"""
     .kpi-card:nth-child(5) {{ animation-delay: 0.26s; }}
     .kpi-card:nth-child(6) {{ animation-delay: 0.32s; }}
 
-    .db-section .bar {{
-        animation: pulseGlow 2.4s ease-in-out infinite;
+    /* ---- Chart & table glass panels ---- */
+    div[data-testid="stPlotlyChart"] {{
+        background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+        border: 1px solid {PANEL_BORDER};
+        border-radius: 16px;
+        padding: 10px 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        animation: fadeInUp 0.7s ease-out backwards;
     }}
 
-    /* Charts & tables fade/slide into view as you scroll to them */
-    div[data-testid="stPlotlyChart"],
     div[data-testid="stDataFrame"] {{
-        opacity: 0;
-        transform: translateY(18px);
-        transition: opacity 0.7s ease, transform 0.7s ease;
+        border: 1px solid {PANEL_BORDER};
+        border-radius: 14px;
+        overflow: hidden;
+        animation: fadeInUp 0.7s ease-out backwards;
     }}
-    div[data-testid="stPlotlyChart"].tr-in-view,
-    div[data-testid="stDataFrame"].tr-in-view {{
-        opacity: 1 !important;
-        transform: translateY(0) !important;
+
+    div[data-testid="stMetric"] {{
+        background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+        border: 1px solid {PANEL_BORDER};
+        border-radius: 14px;
+        padding: 14px 18px;
+    }}
+    div[data-testid="stMetricValue"] {{
+        font-family: 'JetBrains Mono', monospace;
+    }}
+
+    div[data-testid="stExpander"] {{
+        background: rgba(255,255,255,0.03);
+        border: 1px solid {PANEL_BORDER};
+        border-radius: 14px;
+    }}
+
+    .stAlert {{
+        background: rgba(139,92,246,0.10);
+        border: 1px solid {PANEL_BORDER};
+        border-radius: 14px;
+    }}
+
+    /* multiselect tags */
+    span[data-baseweb="tag"] {{
+        background: linear-gradient(135deg, {VIOLET}, #6D28D9) !important;
+        border-radius: 8px !important;
+    }}
+
+    hr {{
+        border-color: {PANEL_BORDER};
+    }}
+
+    .footer {{
+        text-align: center;
+        color: {TEXT_DIM};
+        font-size: 12.5px;
+        padding: 10px 0 24px 0;
+    }}
+    .footer b {{
+        background: linear-gradient(90deg, {VIOLET}, {CYAN});
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }}
+
+    /* ---- Animations ---- */
+    @keyframes fadeInUp {{
+        from {{ opacity: 0; transform: translateY(16px); }}
+        to   {{ opacity: 1; transform: translateY(0); }}
+    }}
+    @keyframes floaty {{
+        0%, 100% {{ transform: translate(0, 0); }}
+        50%      {{ transform: translate(-18px, 14px); }}
     }}
 </style>
 """, unsafe_allow_html=True)
 
 
-def inject_dynamic_fx():
-    """Injects a low-key animated particle network behind the app and a
-    scroll-reveal observer for charts/tables. Runs in the parent document
-    so it persists as a fixed background across the whole page."""
-    components.html("""
-    <script>
-    (function() {
-        const doc = window.parent.document;
-
-        // ---------- animated particle network background ----------
-        if (!doc.getElementById('tech-bg-canvas')) {
-            const canvas = doc.createElement('canvas');
-            canvas.id = 'tech-bg-canvas';
-            Object.assign(canvas.style, {
-                position: 'fixed', top: '0', left: '0',
-                width: '100vw', height: '100vh',
-                zIndex: '-1', pointerEvents: 'none', opacity: '0.5'
-            });
-            doc.body.appendChild(canvas);
-
-            const ctx = canvas.getContext('2d');
-            let w, h;
-            function resize() {
-                w = canvas.width = window.parent.innerWidth;
-                h = canvas.height = window.parent.innerHeight;
-            }
-            resize();
-            window.parent.addEventListener('resize', resize);
-
-            const COUNT = 65;
-            const colors = ['__ACCENT__', '__ACCENT2__'];
-            const pts = [];
-            for (let i = 0; i < COUNT; i++) {
-                pts.push({
-                    x: Math.random() * w, y: Math.random() * h,
-                    vx: (Math.random() - 0.5) * 0.28,
-                    vy: (Math.random() - 0.5) * 0.28,
-                    r: Math.random() * 1.4 + 0.6,
-                    c: colors[i % 2]
-                });
-            }
-
-            (function tick() {
-                ctx.clearRect(0, 0, w, h);
-                for (const p of pts) {
-                    p.x += p.vx; p.y += p.vy;
-                    if (p.x < 0 || p.x > w) p.vx *= -1;
-                    if (p.y < 0 || p.y > h) p.vy *= -1;
-                }
-                for (let i = 0; i < COUNT; i++) {
-                    for (let j = i + 1; j < COUNT; j++) {
-                        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 125) {
-                            ctx.strokeStyle = 'rgba(47,211,198,' + (0.14 * (1 - dist / 125)) + ')';
-                            ctx.lineWidth = 0.6;
-                            ctx.beginPath();
-                            ctx.moveTo(pts[i].x, pts[i].y);
-                            ctx.lineTo(pts[j].x, pts[j].y);
-                            ctx.stroke();
-                        }
-                    }
-                }
-                for (const p of pts) {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    ctx.fillStyle = p.c;
-                    ctx.fill();
-                }
-                requestAnimationFrame(tick);
-            })();
-        }
-
-        // ---------- scroll-reveal for charts & tables ----------
-        if (!window.parent.__trObserver) {
-            window.parent.__trObserver = new IntersectionObserver((entries) => {
-                entries.forEach(e => {
-                    if (e.isIntersecting) {
-                        e.target.classList.add('tr-in-view');
-                        window.parent.__trObserver.unobserve(e.target);
-                    }
-                });
-            }, { threshold: 0.15 });
-        }
-
-        setInterval(() => {
-            doc.querySelectorAll('[data-testid="stPlotlyChart"]:not(.tr-observed), [data-testid="stDataFrame"]:not(.tr-observed)')
-                .forEach(el => {
-                    el.classList.add('tr-observed');
-                    window.parent.__trObserver.observe(el);
-                });
-        }, 400);
-    })();
-    </script>
-    """.replace("__ACCENT__", ACCENT).replace("__ACCENT2__", ACCENT_2), height=0, width=0)
-
-
-inject_dynamic_fx()
-
-
 def section_header(title, subtitle=None):
-    """Renders a styled section header in place of st.subheader."""
+    """Renders a styled section header."""
     sub_html = f'<span class="sub">— {subtitle}</span>' if subtitle else ""
     st.markdown(
-        f'<div class="db-section"><div class="bar"></div>'
+        f'<div class="db-section"><div class="pill"></div>'
         f'<h3>{title}</h3>{sub_html}</div>',
         unsafe_allow_html=True
     )
 
 
 def kpi_grid(cards):
-    """cards: list of (label, value, accent_color) tuples."""
+    """cards: list of (icon, label, value, color_a, color_b) tuples."""
     html = '<div class="kpi-grid">'
-    for label, value, accent in cards:
+    for icon, label, value, a, b in cards:
         html += (
-            f'<div class="kpi-card" style="--kpi-accent:{accent}">'
+            f'<div class="kpi-card" style="--kpi-a:{a}; --kpi-b:{b}">'
+            f'<div class="kpi-icon">{icon}</div>'
             f'<div class="kpi-label">{label}</div>'
             f'<div class="kpi-value">{value}</div>'
             f'</div>'
         )
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
+
+
+def style_fig(fig):
+    """Shared finishing touches for every chart."""
+    fig.update_layout(hoverlabel=dict(bgcolor=PANEL_ALT, font_color=TEXT))
+    return fig
 
 
 # ============================================================
@@ -399,8 +408,7 @@ EXPECTED_COLUMNS = [
 
 def find_dataset():
 
-    base_dir = Path(__file__).resolve().parent
-    data_dir = base_dir / "data"
+    data_dir = Path(__file__).resolve().parent
 
     possible_files = [
         data_dir / "retail-orders-clean.csv",
@@ -443,21 +451,16 @@ def load_dataset(file_path):
 
     df = pd.read_csv(file_path)
 
-    # Remove accidental spaces from column names
+    # Clean column names
     df.columns = (
         df.columns
         .str.strip()
         .str.lower()
         .str.replace(" ", "_")
     )
-
-    # Remove accidental markdown ** if present
     df.columns = df.columns.str.replace("*", "", regex=False)
-
-    # Remove BOM
     df.columns = df.columns.str.replace("\ufeff", "", regex=False)
 
-    # Check columns
     missing_columns = [
         col for col in EXPECTED_COLUMNS
         if col not in df.columns
@@ -474,12 +477,7 @@ def load_dataset(file_path):
 
         st.stop()
 
-    # Keep expected columns
     df = df[EXPECTED_COLUMNS].copy()
-
-    # --------------------------------------------------------
-    # DATA TYPE CONVERSION
-    # --------------------------------------------------------
 
     numeric_columns = [
         "price_per_unit",
@@ -499,7 +497,6 @@ def load_dataset(file_path):
         errors="coerce"
     )
 
-    # Remove rows where essential values are missing
     df = df.dropna(
         subset=[
             "transaction_id",
@@ -521,12 +518,10 @@ dataset_path = find_dataset()
 
 if dataset_path is None:
 
-    st.error(
-        "No CSV dataset found."
-    )
+    st.error("No CSV dataset found.")
 
     st.info(
-        "Place your cleaned CSV inside the `data` folder "
+        "Place your cleaned CSV next to `app.py` "
         "and name it `retail-orders-clean.csv`."
     )
 
@@ -537,59 +532,17 @@ df = load_dataset(dataset_path)
 
 
 # ============================================================
-# CALCULATED METRICS
-# ============================================================
-
-total_revenue = df["total_spent"].sum()
-
-total_transactions = df["transaction_id"].nunique()
-
-total_customers = df["customer_id"].nunique()
-
-average_order_value = (
-    total_revenue / total_transactions
-    if total_transactions > 0
-    else 0
-)
-
-total_quantity = df["quantity"].sum()
-
-discount_transactions = (
-    df["discount_applied"].eq(1).sum()
-)
-
-discount_percentage = (
-    discount_transactions / len(df) * 100
-    if len(df) > 0
-    else 0
-)
-
-
-# ============================================================
-# HEADER
-# ============================================================
-
-st.markdown(
-    '<div class="db-header">'
-    '<h1>Retail Business Dashboard</h1>'
-    '<p>Interactive sales, customer & business performance analysis</p>'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    f'<div class="db-meta">DATASET: {dataset_path.name}  |  RECORDS: {len(df):,}</div>',
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
 # SIDEBAR FILTERS
 # ============================================================
 
-st.sidebar.markdown("### 🔎 Dashboard Filters")
+st.sidebar.markdown(
+    f'<div class="sb-brand"><div class="logo">🛍️</div>'
+    f'<div><div class="name">{APP_NAME}</div>'
+    f'<div class="tag">Sales · Customers · Insights</div></div></div>',
+    unsafe_allow_html=True
+)
 
-# Date filter
+st.sidebar.markdown("### 🎛️ Filters")
 
 min_date = df["transaction_date"].min().date()
 max_date = df["transaction_date"].max().date()
@@ -601,53 +554,26 @@ date_range = st.sidebar.date_input(
     max_value=max_date
 )
 
-if isinstance(date_range, tuple) and len(date_range) == 2:
-
+if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
     start_date = pd.Timestamp(date_range[0])
     end_date = pd.Timestamp(date_range[1])
-
 else:
-
     start_date = pd.Timestamp(min_date)
     end_date = pd.Timestamp(max_date)
 
-
-# Category
-
-categories = sorted(
-    df["category"].dropna().unique().tolist()
-)
-
+categories = sorted(df["category"].dropna().unique().tolist())
 selected_categories = st.sidebar.multiselect(
-    "Category",
-    categories,
-    default=categories
+    "Category", categories, default=categories
 )
 
-
-# Payment method
-
-payment_methods = sorted(
-    df["payment_method"].dropna().unique().tolist()
-)
-
+payment_methods = sorted(df["payment_method"].dropna().unique().tolist())
 selected_payment = st.sidebar.multiselect(
-    "Payment Method",
-    payment_methods,
-    default=payment_methods
+    "Payment Method", payment_methods, default=payment_methods
 )
 
-
-# Discount
-
-discount_options = sorted(
-    df["discount_status"].dropna().unique().tolist()
-)
-
+discount_options = sorted(df["discount_status"].dropna().unique().tolist())
 selected_discount = st.sidebar.multiselect(
-    "Discount Status",
-    discount_options,
-    default=discount_options
+    "Discount Status", discount_options, default=discount_options
 )
 
 
@@ -657,7 +583,7 @@ selected_discount = st.sidebar.multiselect(
 
 filtered_df = df[
     (df["transaction_date"] >= start_date)
-    & (df["transaction_date"] <= end_date)
+    & (df["transaction_date"] < end_date + pd.Timedelta(days=1))
     & (df["category"].isin(selected_categories))
     & (df["payment_method"].isin(selected_payment))
     & (df["discount_status"].isin(selected_discount))
@@ -665,33 +591,52 @@ filtered_df = df[
 
 
 # ============================================================
+# HEADER
+# ============================================================
+
+st.markdown(
+    f'<div class="hero">'
+    f'<span class="eyebrow">Live Business Intelligence</span>'
+    f'<h1>{APP_NAME}</h1>'
+    f'<p>Interactive sales, customer &amp; business performance analysis</p>'
+    f'</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    f'<div class="meta-row">'
+    f'<span class="chip">DATASET <b>{dataset_path.name}</b></span>'
+    f'<span class="chip">RECORDS <b>{len(filtered_df):,}</b> / {len(df):,}</span>'
+    f'<span class="chip">PERIOD <b>{start_date:%d %b %Y} → {end_date:%d %b %Y}</b></span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
 # FILTERED KPIs
 # ============================================================
 
 revenue = filtered_df["total_spent"].sum()
-
 transactions = filtered_df["transaction_id"].nunique()
-
 customers = filtered_df["customer_id"].nunique()
-
 aov = revenue / transactions if transactions > 0 else 0
-
 quantity = filtered_df["quantity"].sum()
+discount_pct = (
+    filtered_df["discount_applied"].eq(1).sum() / len(filtered_df) * 100
+    if len(filtered_df) > 0
+    else 0
+)
 
-
-# ============================================================
-# KPI CARDS
-# ============================================================
-
-section_header("Executive KPIs")
+section_header("Executive KPIs", "headline numbers for your current filters")
 
 kpi_grid([
-    ("Revenue", f"₹{revenue:,.0f}", ACCENT),
-    ("Transactions", f"{transactions:,}", ACCENT_2),
-    ("Customers", f"{customers:,}", ACCENT),
-    ("Avg order value", f"₹{aov:,.2f}", ACCENT_2),
-    ("Total quantity", f"{quantity:,.0f}", ACCENT),
-    ("Discount transactions", f"{discount_percentage:.1f}%", ACCENT_2),
+    ("💰", "Revenue", f"₹{revenue:,.0f}", VIOLET, "#6D28D9"),
+    ("🧾", "Transactions", f"{transactions:,}", CYAN, "#0EA5E9"),
+    ("👥", "Customers", f"{customers:,}", PINK, "#DB2777"),
+    ("📈", "Avg order value", f"₹{aov:,.2f}", AMBER, "#F59E0B"),
+    ("📦", "Total quantity", f"{quantity:,.0f}", GREEN, "#10B981"),
+    ("🏷️", "Discounted orders", f"{discount_pct:.1f}%", "#60A5FA", "#6366F1"),
 ])
 
 
@@ -700,11 +645,7 @@ kpi_grid([
 # ============================================================
 
 if filtered_df.empty:
-
-    st.warning(
-        "No data available for the selected filters."
-    )
-
+    st.warning("No data available for the selected filters.")
     st.stop()
 
 
@@ -712,21 +653,15 @@ if filtered_df.empty:
 # REVENUE TREND
 # ============================================================
 
-section_header("Revenue Trend")
+section_header("Revenue Trend", "month by month")
 
 monthly_revenue = (
     filtered_df
-    .groupby(
-        filtered_df["transaction_date"].dt.to_period("M")
-    )["total_spent"]
+    .groupby(filtered_df["transaction_date"].dt.to_period("M"))["total_spent"]
     .sum()
     .reset_index()
 )
-
-monthly_revenue["transaction_date"] = (
-    monthly_revenue["transaction_date"]
-    .dt.to_timestamp()
-)
+monthly_revenue["transaction_date"] = monthly_revenue["transaction_date"].dt.to_timestamp()
 
 fig_revenue = px.area(
     monthly_revenue,
@@ -735,19 +670,17 @@ fig_revenue = px.area(
     markers=True,
     title="Monthly Revenue Trend"
 )
-
-fig_revenue.update_traces(line_color=ACCENT, fillcolor="rgba(245,166,35,0.12)")
-
+fig_revenue.update_traces(
+    line=dict(color=VIOLET, width=3),
+    fillcolor="rgba(139,92,246,0.22)",
+    marker=dict(color=CYAN, size=7)
+)
 fig_revenue.update_layout(
     xaxis_title="Month",
     yaxis_title="Revenue (₹)",
     hovermode="x unified"
 )
-
-st.plotly_chart(
-    fig_revenue,
-    use_container_width=True
-)
+st.plotly_chart(style_fig(fig_revenue), use_container_width=True)
 
 
 # ============================================================
@@ -755,9 +688,6 @@ st.plotly_chart(
 # ============================================================
 
 section_header("Category Performance")
-
-col1, col2 = st.columns(2)
-
 
 category_revenue = (
     filtered_df
@@ -767,9 +697,9 @@ category_revenue = (
     .sort_values("total_spent", ascending=False)
 )
 
+col1, col2 = st.columns(2)
 
 with col1:
-
     fig_category = px.bar(
         category_revenue,
         x="category",
@@ -779,34 +709,27 @@ with col1:
         color="category",
         color_discrete_sequence=COLORWAY
     )
-
+    fig_category.update_traces(marker_line_width=0)
     fig_category.update_layout(
         xaxis_title="Category",
         yaxis_title="Revenue (₹)",
         showlegend=False
     )
-
-    st.plotly_chart(
-        fig_category,
-        use_container_width=True
-    )
-
+    st.plotly_chart(style_fig(fig_category), use_container_width=True)
 
 with col2:
-
     fig_category_pie = px.pie(
         category_revenue,
         names="category",
         values="total_spent",
         title="Revenue Share by Category",
-        hole=0.55,
+        hole=0.6,
         color_discrete_sequence=COLORWAY
     )
-
-    st.plotly_chart(
-        fig_category_pie,
-        use_container_width=True
+    fig_category_pie.update_traces(
+        marker=dict(line=dict(color=BG, width=2))
     )
+    st.plotly_chart(style_fig(fig_category_pie), use_container_width=True)
 
 
 # ============================================================
@@ -832,17 +755,12 @@ fig_payment = px.bar(
     text_auto=".2s",
     color_discrete_sequence=COLORWAY
 )
-
 fig_payment.update_layout(
     xaxis_title="Payment Method",
     yaxis_title="Revenue (₹)",
     showlegend=False
 )
-
-st.plotly_chart(
-    fig_payment,
-    use_container_width=True
-)
+st.plotly_chart(style_fig(fig_payment), use_container_width=True)
 
 
 # ============================================================
@@ -862,11 +780,9 @@ discount_analysis = (
     .reset_index()
 )
 
-
 col1, col2 = st.columns(2)
 
 with col1:
-
     fig_discount = px.bar(
         discount_analysis,
         x="discount_status",
@@ -874,31 +790,24 @@ with col1:
         title="Revenue by Discount Status",
         text_auto=".2s",
         color="discount_status",
-        color_discrete_sequence=COLORWAY
+        color_discrete_sequence=[CYAN, PINK, VIOLET, AMBER]
     )
-
     fig_discount.update_layout(showlegend=False)
-
-    st.plotly_chart(
-        fig_discount,
-        use_container_width=True
-    )
+    st.plotly_chart(style_fig(fig_discount), use_container_width=True)
 
 with col2:
-
     fig_discount_pie = px.pie(
         discount_analysis,
         names="discount_status",
         values="Transactions",
         title="Transactions by Discount Status",
-        hole=0.55,
-        color_discrete_sequence=COLORWAY
+        hole=0.6,
+        color_discrete_sequence=[CYAN, PINK, VIOLET, AMBER]
     )
-
-    st.plotly_chart(
-        fig_discount_pie,
-        use_container_width=True
+    fig_discount_pie.update_traces(
+        marker=dict(line=dict(color=BG, width=2))
     )
+    st.plotly_chart(style_fig(fig_discount_pie), use_container_width=True)
 
 
 # ============================================================
@@ -909,19 +818,12 @@ section_header("Category × Monthly Revenue Heatmap")
 
 heatmap_data = (
     filtered_df
-    .assign(
-        month_period=filtered_df["transaction_date"].dt.to_period("M")
-    )
-    .groupby(
-        ["category", "month_period"]
-    )["total_spent"]
+    .assign(month_period=filtered_df["transaction_date"].dt.to_period("M"))
+    .groupby(["category", "month_period"])["total_spent"]
     .sum()
     .reset_index()
 )
-
-heatmap_data["month_period"] = (
-    heatmap_data["month_period"].astype(str)
-)
+heatmap_data["month_period"] = heatmap_data["month_period"].astype(str)
 
 heatmap_pivot = heatmap_data.pivot(
     index="category",
@@ -933,18 +835,10 @@ fig_heatmap = px.imshow(
     heatmap_pivot,
     aspect="auto",
     title="Monthly Revenue by Category",
-    labels={
-        "x": "Month",
-        "y": "Category",
-        "color": "Revenue"
-    },
-    color_continuous_scale=[PANEL, ACCENT_2, ACCENT]
+    labels={"x": "Month", "y": "Category", "color": "Revenue"},
+    color_continuous_scale=["#141A40", VIOLET, PINK, AMBER]
 )
-
-st.plotly_chart(
-    fig_heatmap,
-    use_container_width=True
-)
+st.plotly_chart(style_fig(fig_heatmap), use_container_width=True)
 
 
 # ============================================================
@@ -958,10 +852,7 @@ item_revenue = (
     .groupby("item")["total_spent"]
     .sum()
     .reset_index()
-    .sort_values(
-        "total_spent",
-        ascending=False
-    )
+    .sort_values("total_spent", ascending=False)
     .head(10)
 )
 
@@ -972,21 +863,16 @@ fig_items = px.bar(
     orientation="h",
     title="Top 10 Items by Revenue",
     text_auto=".2s",
-    color_discrete_sequence=[ACCENT]
+    color="total_spent",
+    color_continuous_scale=[CYAN, VIOLET, PINK]
 )
-
 fig_items.update_layout(
     xaxis_title="Revenue (₹)",
     yaxis_title="Item",
-    yaxis={
-        "categoryorder": "total ascending"
-    }
+    yaxis={"categoryorder": "total ascending"},
+    coloraxis_showscale=False
 )
-
-st.plotly_chart(
-    fig_items,
-    use_container_width=True
-)
+st.plotly_chart(style_fig(fig_items), use_container_width=True)
 
 
 # ============================================================
@@ -1006,6 +892,7 @@ yearly_data = (
     )
     .reset_index()
 )
+yearly_data["year"] = yearly_data["year"].astype("Int64").astype(str)
 
 fig_year = px.bar(
     yearly_data,
@@ -1013,13 +900,10 @@ fig_year = px.bar(
     y="Revenue",
     text_auto=".2s",
     title="Revenue by Year",
-    color_discrete_sequence=[ACCENT_2]
+    color_discrete_sequence=[VIOLET]
 )
-
-st.plotly_chart(
-    fig_year,
-    use_container_width=True
-)
+fig_year.update_layout(xaxis_title="Year", yaxis_title="Revenue (₹)")
+st.plotly_chart(style_fig(fig_year), use_container_width=True)
 
 
 # ============================================================
@@ -1037,27 +921,20 @@ customer_data = (
         Quantity=("quantity", "sum")
     )
     .reset_index()
-    .sort_values(
-        "Total_Spent",
-        ascending=False
-    )
+    .sort_values("Total_Spent", ascending=False)
 )
 
 col1, col2 = st.columns(2)
 
 with col1:
-
-    st.markdown("**Top Customers**")
-
+    st.markdown("**🏆 Top Customers**")
     st.dataframe(
         customer_data.head(10),
         use_container_width=True,
         hide_index=True
     )
 
-
 with col2:
-
     fig_customer = px.scatter(
         customer_data,
         x="Transactions",
@@ -1065,13 +942,11 @@ with col2:
         size="Quantity",
         hover_name="customer_id",
         title="Customer Spending vs Transactions",
-        color_discrete_sequence=[ACCENT]
+        color="Total_Spent",
+        color_continuous_scale=[CYAN, VIOLET, PINK]
     )
-
-    st.plotly_chart(
-        fig_customer,
-        use_container_width=True
-    )
+    fig_customer.update_layout(coloraxis_showscale=False)
+    st.plotly_chart(style_fig(fig_customer), use_container_width=True)
 
 
 # ============================================================
@@ -1083,37 +958,22 @@ section_header("Data Quality Overview")
 quality_col1, quality_col2, quality_col3 = st.columns(3)
 
 with quality_col1:
-
-    st.metric(
-        "Rows",
-        f"{len(filtered_df):,}"
-    )
+    st.metric("Rows", f"{len(filtered_df):,}")
 
 with quality_col2:
-
-    st.metric(
-        "Columns",
-        f"{len(filtered_df.columns):,}"
-    )
+    st.metric("Columns", f"{len(filtered_df.columns):,}")
 
 with quality_col3:
-
-    missing_values = int(
-        filtered_df.isnull().sum().sum()
-    )
-
-    st.metric(
-        "Missing Values",
-        f"{missing_values:,}"
-    )
+    st.metric("Missing Values", f"{int(filtered_df.isnull().sum().sum()):,}")
 
 
 # ============================================================
 # DATA PREVIEW
 # ============================================================
 
-with st.expander("📋 View Dataset"):
+st.write("")
 
+with st.expander("📋 View Dataset"):
     st.dataframe(
         filtered_df,
         use_container_width=True,
@@ -1122,7 +982,7 @@ with st.expander("📋 View Dataset"):
 
 
 # ============================================================
-# LIMITATIONS / DATASET NOTE
+# DATASET NOTE
 # ============================================================
 
 st.info(
@@ -1149,3 +1009,7 @@ st.info(
 
 st.markdown("---")
 
+st.markdown(
+    f'<div class="footer"><b>{APP_NAME}</b> · Built with Streamlit &amp; Plotly</div>',
+    unsafe_allow_html=True
+)
