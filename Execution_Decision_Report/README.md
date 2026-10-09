@@ -1,13 +1,13 @@
 # Task 06 — Executive Decision Report & Capstone Presentation
 
-[![Streamlit App](https://img.shields.io/badge/Streamlit-Live_Dashboard-FF4B4B?style=for-the-badge&logo=streamlit)](https://retail-business-intelligence-analytics-urhxcw74qyyvudplfiqgn5.streamlit.app/)
+[![Streamlit App](https://retailanalyticsapp-z294pv9u3tzjse8cihqgrw.streamlit.app/)
 
 ## Objective
 Synthesize Tasks 02–05 into an executive-ready Business Intelligence report for management decision-making.
 
 ## 🚀 Live Interactive Dashboard
 You can access and explore the live Streamlit dashboard here:  
-👉 **[Retail Business Intelligence & Analytics Dashboard](https://retail-business-intelligence-analytics-urhxcw74qyyvudplfiqgn5.streamlit.app/)**
+👉 **[Retail Business Intelligence & Analytics Dashboard](https://retailanalyticsapp-z294pv9u3tzjse8cihqgrw.streamlit.app/)**
 
 ---
 
